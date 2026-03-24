@@ -87,6 +87,7 @@ function buildAtlasPrompt(input: string, vibe: string, places: unknown[]) {
       lng: place.lng,
       description: place.description || "",
       points_reward: place.points_reward || 0,
+      zone: place.zone,
     }));
     const edges = nodes.slice(0, -1).map((node, idx) => ({
       from: node.id,
