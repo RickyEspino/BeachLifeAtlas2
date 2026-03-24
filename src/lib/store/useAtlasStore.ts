@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { AtlasExperience } from "@/types/atlas";
 
-interface AtlasState {
+export interface AtlasState {
   experience: AtlasExperience | null;
   setExperience: (exp: AtlasExperience) => void;
 }

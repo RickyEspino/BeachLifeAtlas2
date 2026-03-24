@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAtlasStore } from "@/lib/store/useAtlasStore";
+import { useAtlasStore, AtlasState } from "@/lib/store/useAtlasStore";
 
 export default function HomePage() {
   const [input, setInput] = useState("");
   const router = useRouter();
-  const setExperience = useAtlasStore((s) => s.setExperience);
+  const setExperience = useAtlasStore((s: AtlasState) => s.setExperience);
 
   const handleSubmit = async () => {
     const res = await fetch("/api/atlas", {
