@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import QuickFindCard from "@/components/quick-find/quick-find-card";
 import QuickFindMap from "@/components/map/quick-find-map";
 
@@ -32,24 +32,18 @@ type QuickSearch = {
 type SortMode = "best-match" | "points" | "alphabetical";
 
 export default function QuickFindClient({ search }: { search: QuickSearch }) {
+  const [results, setResults] = useState<QuickFindResult[]>(search.results);
   const [sortMode, setSortMode] = useState<SortMode>("best-match");
   const [selectedId, setSelectedId] = useState<string | null>(
     search.results[0]?.id ?? null
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [likedCategories, setLikedCategories] = useState<string[]>([]);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
 
   const rerankedResults = useMemo(() => {
-    const items = [...search.results];
-
-    if (likedCategories.length > 0) {
-      items.sort((a, b) => {
-        const aBoost = a.category && likedCategories.includes(a.category) ? 1 : 0;
-        const bBoost = b.category && likedCategories.includes(b.category) ? 1 : 0;
-        if (aBoost !== bBoost) return bBoost - aBoost;
-        return a.sort_order - b.sort_order;
-      });
-    }
+    const items = [...results];
 
     if (sortMode === "points") {
       items.sort((a, b) => (b.points_reward ?? 0) - (a.points_reward ?? 0));
@@ -60,19 +54,58 @@ export default function QuickFindClient({ search }: { search: QuickSearch }) {
     }
 
     return items;
-  }, [search.results, sortMode, likedCategories]);
+  }, [results, sortMode]);
 
   const selectedResult =
     rerankedResults.find((item) => item.id === selectedId) ?? rerankedResults[0] ?? null;
 
-  const handleMoreLikeThis = (category: string | null) => {
+  const fetchMoreLikeThis = async (category: string | null) => {
     if (!category) return;
 
+    setError("");
     setLikedCategories((current) =>
-      current.includes(category)
-        ? current
-        : [...current, category]
+      current.includes(category) ? current : [...current, category]
     );
+
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/atlas/quick-find/rerank", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: search.query ?? "",
+            distance: search.distance ?? "walkable",
+            anchorMode: search.anchor_mode ?? "auto",
+            selectedZone: search.selected_zone ?? null,
+            userLat: search.user_lat ?? null,
+            userLng: search.user_lng ?? null,
+            preferredCategory: category,
+            excludePlaceIds: results
+              .map((item) => item.place_id)
+              .filter((id): id is string => !!id),
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.error || "Failed to rerank");
+        }
+
+        const nextResults = Array.isArray(data.results) ? data.results : [];
+        if (!nextResults.length) {
+          throw new Error("No new results found");
+        }
+
+        setResults(nextResults);
+        setSelectedId(nextResults[0]?.id ?? null);
+        setExpandedId(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      }
+    });
   };
 
   return (
@@ -139,7 +172,7 @@ export default function QuickFindClient({ search }: { search: QuickSearch }) {
                         current === item.id ? null : item.id
                       )
                     }
-                    onMoreLikeThis={() => handleMoreLikeThis(item.category)}
+                    onMoreLikeThis={() => fetchMoreLikeThis(item.category)}
                   />
                 </div>
               ))}
@@ -147,11 +180,12 @@ export default function QuickFindClient({ search }: { search: QuickSearch }) {
           </div>
 
           {likedCategories.length > 0 ? (
-            <div className="rounded-2xl border bg-white p-4 text-sm text-neutral-600">
-              Re-ranked with preference for: {" "}
-              <span className="font-medium">{likedCategories.join(", ")}</span>
+            <div className="mt-4 text-sm text-neutral-600">
+              Learning your taste: <span className="font-medium">{likedCategories.join(", ")}</span>
             </div>
           ) : null}
+
+          {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         </section>
 
         <aside className="space-y-6">
