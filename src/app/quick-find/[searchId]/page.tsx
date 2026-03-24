@@ -1,11 +1,7 @@
-"use client";
-import dynamic from "next/dynamic";
+// NO "use client" here
+import MapClient from "@/components/map/map-client";
 import { notFound } from "next/navigation";
 import { getQuickSearchById } from "@/lib/atlas/get-quick-search";
-
-const MapView = dynamic(() => import("@/components/map/map-view"), {
-  ssr: false,
-});
 
 interface QuickFindPageProps {
   params: Promise<{ searchId: string }>;
@@ -83,7 +79,7 @@ export default async function QuickFindPage({ params }: QuickFindPageProps) {
 
           <div className="mt-5">
             {mapNodes.length > 0 ? (
-              <MapView nodes={mapNodes} />
+              <MapClient nodes={mapNodes} />
             ) : (
               <div className="rounded-2xl border p-4 text-sm text-neutral-600">
                 Map unavailable.
