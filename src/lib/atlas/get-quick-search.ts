@@ -5,7 +5,7 @@ export async function getQuickSearchById(searchId: string) {
 
   const { data: search, error: searchError } = await supabase
     .from("quick_searches")
-    .select("id, query, vibe, distance, anchor_mode, selected_zone, created_at")
+    .select("id, query, vibe, distance, anchor_mode, selected_zone, user_lat, user_lng, created_at")
     .eq("id", searchId)
     .single();
 
