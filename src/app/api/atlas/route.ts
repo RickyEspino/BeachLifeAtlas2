@@ -1,7 +1,8 @@
 import OpenAI from "openai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { saveTrip } from "@/lib/atlas/save-trip";
-import type { AtlasExperience } from "@/types/atlas";
+import { saveQuickSearch } from "@/lib/atlas/save-quick-search";
+import type { AtlasExperience, AtlasNode } from "@/types/atlas";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -77,7 +78,11 @@ function getDistanceRadiusMiles(distance: string) {
   }
 }
 
-function getCategoryPool(vibe: string) {
+function getCategoryPool(vibe: string, mode: string) {
+  if (mode === "quick-find") {
+    return ["food", "tacos", "dessert", "drinks", "activity"];
+  }
+
   switch (vibe) {
     case "foodie":
       return ["food", "tacos", "dessert", "drinks"];
@@ -95,9 +100,13 @@ function getCategoryPool(vibe: string) {
   }
 }
 
-function getCategoryPoolFromInput(vibe: string, input: string) {
-  const base = getCategoryPool(vibe);
+function getCategoryPoolFromInput(vibe: string, input: string, mode: string) {
+  const base = getCategoryPool(vibe, mode);
   const text = input.toLowerCase();
+
+  if (text.includes("coffee")) {
+    return Array.from(new Set(["food", "dessert", ...base]));
+  }
 
   if (text.includes("taco")) {
     return Array.from(new Set(["tacos", "drinks", "dessert", ...base]));
@@ -278,6 +287,20 @@ function applyAutoDistanceStrategy(
   return bestCluster.slice(0, distance === "walkable" ? 12 : 18);
 }
 
+function buildQuickFindResults(places: RankedPlace[]): AtlasNode[] {
+  return places.slice(0, 5).map((place) => ({
+    id: place.id,
+    place_id: place.id,
+    name: place.name,
+    role: "PICK",
+    description: place.description ?? "",
+    lat: place.lat,
+    lng: place.lng,
+    points_reward: place.points_reward ?? 0,
+    category: place.category,
+  }));
+}
+
 function buildFallbackExperience(places: Place[]): AtlasExperience {
   const nodes = places.slice(0, 5).map((place, i) => ({
     id: place.id,
@@ -415,6 +438,7 @@ function parseExperience(raw: string): AtlasExperience {
 export async function POST(req: Request) {
   try {
     const {
+      mode,
       input,
       vibe,
       distance,
@@ -425,6 +449,11 @@ export async function POST(req: Request) {
     } = await req.json();
 
     const supabase = createSupabaseServerClient();
+
+    const modeValue =
+      normalizeText(mode || "full-experience") === "quick-find"
+        ? "quick-find"
+        : "full-experience";
 
     const safeInput = typeof input === "string" ? input.trim() : "";
     const vibeValue = normalizeText(vibe || "fun");
@@ -441,7 +470,7 @@ export async function POST(req: Request) {
       typeof userLng === "number" &&
       !Number.isNaN(userLng);
 
-    const categoryPool = getCategoryPoolFromInput(vibeValue, safeInput);
+    const categoryPool = getCategoryPoolFromInput(vibeValue, safeInput, modeValue);
 
     let query = supabase
       .from("places")
@@ -503,6 +532,22 @@ export async function POST(req: Request) {
       );
     } else {
       finalPlaces = applyAutoDistanceStrategy(rankedPlaces, distanceValue);
+    }
+
+    if (modeValue === "quick-find") {
+      const results = buildQuickFindResults(finalPlaces);
+      const searchId = await saveQuickSearch({
+        query: safeInput,
+        vibe: vibeValue,
+        distance: distanceValue,
+        anchorMode: anchorModeValue,
+        selectedZone: selectedZoneValue,
+        userLat: hasUserCoords ? userLat : null,
+        userLng: hasUserCoords ? userLng : null,
+        results,
+      });
+
+      return Response.json({ searchId });
     }
 
     let experience: AtlasExperience;

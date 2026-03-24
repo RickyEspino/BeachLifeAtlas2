@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const modes = [
+  { value: "quick-find", label: "Quick Find" },
+  { value: "full-experience", label: "Full Experience" },
+];
+
 const vibes = ["fun", "chill", "romantic", "family", "foodie", "nightlife"];
 
 const distances = [
@@ -30,7 +35,14 @@ const zones = [
   "south-myrtle-beach",
 ];
 
-const quickIdeas = [
+const quickFindIdeas = [
+  "Best tacos near me",
+  "Coffee in Broadway",
+  "Dessert nearby",
+  "Rooftop drinks",
+];
+
+const fullExperienceIdeas = [
   "Taco crawl with dessert",
   "Romantic rooftop night",
   "Family-friendly rainy day fun",
@@ -38,6 +50,7 @@ const quickIdeas = [
 ];
 
 export default function HomePage() {
+  const [mode, setMode] = useState<"quick-find" | "full-experience">("full-experience");
   const [input, setInput] = useState("");
   const [vibe, setVibe] = useState("fun");
   const [distance, setDistance] = useState("walkable");
@@ -50,6 +63,18 @@ export default function HomePage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
+
+  const quickIdeas = mode === "quick-find" ? quickFindIdeas : fullExperienceIdeas;
+
+  const placeholder =
+    mode === "quick-find"
+      ? "Tacos near me, coffee in Broadway, dessert nearby..."
+      : "Tacos and rooftop drinks with a short walk...";
+
+  const ctaLabel =
+    mode === "quick-find"
+      ? "Find Places"
+      : "Build My BeachLife Experience";
 
   const getLocation = async () => {
     if (!navigator.geolocation) {
@@ -111,6 +136,7 @@ export default function HomePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          mode,
           input,
           vibe,
           distance,
@@ -127,7 +153,11 @@ export default function HomePage() {
         throw new Error(data?.error || "Failed to build experience");
       }
 
-      router.push(`/experience/${data.tripId}`);
+      if (mode === "quick-find") {
+        router.push(`/quick-find/${data.searchId}`);
+      } else {
+        router.push(`/experience/${data.tripId}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -146,7 +176,7 @@ export default function HomePage() {
             Atlas 🌊
           </h1>
           <p className="mt-3 max-w-xl text-neutral-600">
-            Build a fun local route for food, drinks, activities, and sweet stops.
+            Build a fun local route or get a fast answer for tacos, coffee, dessert, and more.
           </p>
         </div>
 
@@ -159,37 +189,61 @@ export default function HomePage() {
       </div>
 
       <section className="rounded-[2rem] border bg-white p-6 shadow-sm">
-        <label className="text-sm font-medium text-neutral-700">
-          What kind of BeachLife experience do you want today?
+        <div>
+          <p className="mb-2 text-sm uppercase tracking-[0.2em] text-neutral-500">
+            Planning mode
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {modes.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setMode(item.value as "quick-find" | "full-experience")}
+                className={`rounded-full border px-4 py-2 transition ${
+                  mode === item.value ? "bg-black text-white" : "bg-white hover:bg-neutral-50"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="mt-6 block text-sm font-medium text-neutral-700">
+          {mode === "quick-find"
+            ? "What are you looking for right now?"
+            : "What kind of BeachLife experience do you want today?"}
         </label>
 
         <textarea
           className="mt-3 min-h-[160px] w-full rounded-[1.5rem] border p-4 text-base outline-none"
-          placeholder="Tacos and rooftop drinks with a short walk..."
+          placeholder={placeholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
 
         <div className="mt-6 space-y-5">
-          <div>
-            <p className="mb-2 text-sm uppercase tracking-[0.2em] text-neutral-500">
-              Mood
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {vibes.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setVibe(item)}
-                  className={`rounded-full border px-4 py-2 capitalize transition ${
-                    vibe === item ? "bg-black text-white" : "bg-white hover:bg-neutral-50"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
+          {mode === "full-experience" ? (
+            <div>
+              <p className="mb-2 text-sm uppercase tracking-[0.2em] text-neutral-500">
+                Mood
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {vibes.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setVibe(item)}
+                    className={`rounded-full border px-4 py-2 capitalize transition ${
+                      vibe === item ? "bg-black text-white" : "bg-white hover:bg-neutral-50"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div>
             <p className="mb-2 text-sm uppercase tracking-[0.2em] text-neutral-500">
@@ -288,7 +342,7 @@ export default function HomePage() {
           disabled={isLoading}
           className="mt-6 w-full rounded-full border px-6 py-4 text-base font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
         >
-          {isLoading ? "Building your BeachLife Experience..." : "Build My BeachLife Experience"}
+          {isLoading ? "Atlas is working..." : ctaLabel}
         </button>
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
