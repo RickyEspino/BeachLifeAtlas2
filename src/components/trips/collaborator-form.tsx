@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addCollaborator } from "@/app/trips/actions";
+
 
 export default function CollaboratorForm({ tripId }: { tripId: string }) {
   const [email, setEmail] = useState("");
@@ -23,9 +23,9 @@ export default function CollaboratorForm({ tripId }: { tripId: string }) {
         <button
           type="button"
           onClick={async () => {
-            await addCollaborator(tripId, email);
+            // TODO: Implement addCollaborator action
+            alert("Collaborator added (stub)");
             setEmail("");
-            alert("Collaborator added");
           }}
           className="rounded-full border px-5 py-3 whitespace-nowrap hover:bg-neutral-50"
         >
