@@ -16,8 +16,8 @@ export default function HomePage() {
     });
 
     const data = await res.json();
-    setExperience(data);
-    router.push("/experience");
+    const encoded = encodeURIComponent(JSON.stringify(data));
+    router.push(`/experience?data=${encoded}`);
   };
 
   return (
