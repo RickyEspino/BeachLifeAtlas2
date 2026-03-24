@@ -2,10 +2,6 @@ import MapView from "@/components/map/map-view";
 import { getTripById } from "@/lib/atlas/get-trip";
 import { notFound } from "next/navigation";
 
-import MapView from "@/components/map/map-view";
-import { getTripById } from "@/lib/atlas/get-trip";
-import { notFound } from "next/navigation";
-
 interface ExperiencePageProps {
   params: Promise<{ tripId: string }>;
 }
