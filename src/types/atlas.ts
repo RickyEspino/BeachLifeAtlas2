@@ -29,4 +29,5 @@ export interface AtlasExperience {
   zone: string;
   nodes: AtlasNode[];
   edges: AtlasEdge[];
+  summary?: string;
 }
