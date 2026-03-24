@@ -19,11 +19,7 @@ export async function POST(req: Request) {
       response_format: { type: "json_object" },
     });
 
-    const text =
-      response.output_text ||
-      response.output?.[0]?.content?.[0]?.text ||
-      response.choices?.[0]?.message?.content ||
-      "{}";
+    const text = response.choices?.[0]?.message?.content || "{}";
 
     return new Response(text, {
       headers: { "Content-Type": "application/json" },
