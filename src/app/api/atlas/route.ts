@@ -73,35 +73,36 @@ function scorePlace(place: Place, vibe: string, input: string) {
   return score;
 }
 
+// Fallback builder for emergency cases
+function buildFallbackExperience(places: Place[]): AtlasExperience {
+  // Pick up to 3-5 places, same zone if possible
+  const nodes = places.slice(0, 5).map((place, i) => ({
+    id: place.id,
+    place_id: place.id,
+    name: place.name,
+    role: ["START", "BUILD", "HIGHLIGHT", "SWEET STOP", "FINALE"][i] || "BUILD",
+    category: place.category,
+    lat: place.lat,
+    lng: place.lng,
+    description: place.description || "",
+    points_reward: place.points_reward || 0,
+    zone: place.zone,
+  }));
+  const edges = nodes.slice(0, -1).map((node, idx) => ({
+    from: node.id,
+    to: nodes[idx + 1].id,
+    mode: "walk",
+  }));
+  return {
+    title: nodes.length ? `BeachLife Experience: ${nodes[0].name}` : "BeachLife Experience",
+    zone: nodes[0]?.zone || "",
+    summary: "Fallback experience due to AI error.",
+    nodes,
+    edges,
+  };
+}
+
 function buildAtlasPrompt(input: string, vibe: string, places: unknown[]) {
-  // Fallback builder for emergency cases
-  function buildFallbackExperience(places: Place[]): AtlasExperience {
-    // Pick up to 3-5 places, same zone if possible
-    const nodes = places.slice(0, 5).map((place, i) => ({
-      id: place.id,
-      place_id: place.id,
-      name: place.name,
-      role: ["START", "BUILD", "HIGHLIGHT", "SWEET STOP", "FINALE"][i] || "BUILD",
-      category: place.category,
-      lat: place.lat,
-      lng: place.lng,
-      description: place.description || "",
-      points_reward: place.points_reward || 0,
-      zone: place.zone,
-    }));
-    const edges = nodes.slice(0, -1).map((node, idx) => ({
-      from: node.id,
-      to: nodes[idx + 1].id,
-      mode: "walk",
-    }));
-    return {
-      title: nodes.length ? `BeachLife Experience: ${nodes[0].name}` : "BeachLife Experience",
-      zone: nodes[0]?.zone || "",
-      summary: "Fallback experience due to AI error.",
-      nodes,
-      edges,
-    };
-  }
   return `
 You are Atlas, the BeachLife AI concierge for Myrtle Beach.
 
