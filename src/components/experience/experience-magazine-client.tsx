@@ -48,6 +48,8 @@ type TripData = {
   share_slug?: string | null;
   cover_image?: string | null;
   nodes: TripNode[];
+  user_lat?: number | null;
+  user_lng?: number | null;
 };
 
 type AltStop = {
