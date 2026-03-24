@@ -5,12 +5,22 @@ interface SaveTripParams {
   experience: AtlasExperience;
   userInput?: string;
   vibe?: string;
+  distance?: string;
+  anchorMode?: string;
+  selectedZone?: string | null;
+  userLat?: number | null;
+  userLng?: number | null;
 }
 
 export async function saveTrip({
   experience,
   userInput,
   vibe,
+  distance,
+  anchorMode,
+  selectedZone,
+  userLat,
+  userLng,
 }: SaveTripParams) {
   const supabase = createSupabaseServerClient();
 
@@ -21,6 +31,11 @@ export async function saveTrip({
       zone: experience.zone,
       user_input: userInput ?? null,
       vibe: vibe ?? null,
+      distance: distance ?? null,
+      anchor_mode: anchorMode ?? null,
+      selected_zone: selectedZone ?? null,
+      user_lat: userLat ?? null,
+      user_lng: userLng ?? null,
     })
     .select("id")
     .single();
