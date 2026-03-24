@@ -550,18 +550,31 @@ export async function POST(req: Request) {
       return Response.json({ searchId });
     }
 
+
     let experience: AtlasExperience;
 
     try {
+      // Only send compactPlaces (top 12, compact fields) to the model
+      const compactPlaces = finalPlaces.slice(0, 12).map((place) => ({
+        id: place.id,
+        name: place.name,
+        zone: place.zone,
+        category: place.category,
+        lat: place.lat,
+        lng: place.lng,
+        description: (place.description ?? "").slice(0, 120),
+        points_reward: place.points_reward ?? 0,
+      }));
+
       const response = await openai.responses.create({
-        model: "gpt-5",
+        model: "gpt-5-mini",
         input: buildAtlasPrompt(
           safeInput,
           vibeValue,
           distanceValue,
           anchorModeValue,
           selectedZoneValue,
-          finalPlaces
+          compactPlaces
         ),
       });
 

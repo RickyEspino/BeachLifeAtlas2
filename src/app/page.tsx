@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const modes = [
@@ -60,6 +60,7 @@ export default function HomePage() {
   const [userLng, setUserLng] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
 
   const router = useRouter();
@@ -102,6 +103,27 @@ export default function HomePage() {
       setIsGettingLocation(false);
     }
   };
+
+  const loadingMessages = [
+    "Scanning nearby spots...",
+    "Building your BeachLife route...",
+    "Finalizing your experience...",
+  ];
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStep(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingStep((current) =>
+        current < loadingMessages.length - 1 ? current + 1 : current
+      );
+    }, 700);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const handleSubmit = async () => {
     try {
@@ -342,7 +364,7 @@ export default function HomePage() {
           disabled={isLoading}
           className="mt-6 w-full rounded-full border px-6 py-4 text-base font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
         >
-          {isLoading ? "Atlas is working..." : ctaLabel}
+          {isLoading ? loadingMessages[loadingStep] : ctaLabel}
         </button>
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
