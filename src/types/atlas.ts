@@ -5,6 +5,7 @@ export interface AtlasNode {
   lat: number;
   lng: number;
   description: string;
+  points_reward?: number;
 }
 
 export interface AtlasEdge {
