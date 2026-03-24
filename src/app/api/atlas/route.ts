@@ -74,6 +74,33 @@ function scorePlace(place: Place, vibe: string, input: string) {
 }
 
 function buildAtlasPrompt(input: string, vibe: string, places: unknown[]) {
+  // Fallback builder for emergency cases
+  function buildFallbackExperience(places: Place[]): AtlasExperience {
+    // Pick up to 3-5 places, same zone if possible
+    const nodes = places.slice(0, 5).map((place, i) => ({
+      id: place.id,
+      place_id: place.id,
+      name: place.name,
+      role: ["START", "BUILD", "HIGHLIGHT", "SWEET STOP", "FINALE"][i] || "BUILD",
+      category: place.category,
+      lat: place.lat,
+      lng: place.lng,
+      description: place.description || "",
+      points_reward: place.points_reward || 0,
+    }));
+    const edges = nodes.slice(0, -1).map((node, idx) => ({
+      from: node.id,
+      to: nodes[idx + 1].id,
+      mode: "walk",
+    }));
+    return {
+      title: nodes.length ? `BeachLife Experience: ${nodes[0].name}` : "BeachLife Experience",
+      zone: nodes[0]?.zone || "",
+      summary: "Fallback experience due to AI error.",
+      nodes,
+      edges,
+    };
+  }
   return `
 You are Atlas, the BeachLife AI concierge for Myrtle Beach.
 
@@ -194,14 +221,10 @@ export async function POST(req: Request) {
       .in("category", categoryPool)
       .limit(40);
 
-    if (placesError) {
-      return Response.json(
-        { error: "Failed to load places" },
-        { status: 500 }
-      );
+    if (placesError || !places?.length) {
+      return Response.json({ error: "No usable places found" }, { status: 500 });
     }
 
-    // Score and rank places
     const rankedPlaces = (places ?? [])
       .map((place) => ({
         ...place,
@@ -210,21 +233,42 @@ export async function POST(req: Request) {
       .sort((a, b) => b.atlas_score - a.atlas_score)
       .slice(0, 20);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are Atlas, a fun AI concierge for Myrtle Beach." },
-        { role: "user", content: buildAtlasPrompt(input, vibeValue, rankedPlaces) },
-      ],
-      response_format: { type: "json_object" },
-    });
+    // Use new OpenAI API signature if available, fallback to old if not
+    let text = "{}";
+    let experience;
+    try {
+      // Try new OpenAI API signature (gpt-5, responses.create)
+      if (openai.responses && openai.responses.create) {
+        const response = await openai.responses.create({
+          model: "gpt-5",
+          input: buildAtlasPrompt(input || "", vibeValue, rankedPlaces),
+        });
+        text = response.output_text || response.output?.[0]?.content?.[0]?.text || "{}";
+      } else {
+        // Fallback to chat.completions.create
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: "You are Atlas, a fun AI concierge for Myrtle Beach." },
+            { role: "user", content: buildAtlasPrompt(input, vibeValue, rankedPlaces) },
+          ],
+          response_format: { type: "json_object" },
+        });
+        text = response.choices?.[0]?.message?.content || "{}";
+      }
+      try {
+        experience = parseExperience(text);
+      } catch {
+        experience = buildFallbackExperience(rankedPlaces);
+      }
+    } catch {
+      experience = buildFallbackExperience(rankedPlaces);
+    }
 
-    const text = response.choices?.[0]?.message?.content || "{}";
-    const experience = parseExperience(text);
     const tripId = await saveTrip({
       experience,
       userInput: input,
-      vibe,
+      vibe: vibeValue,
     });
 
     return Response.json({ tripId });
