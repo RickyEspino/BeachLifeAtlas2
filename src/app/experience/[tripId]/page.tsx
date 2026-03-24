@@ -2,12 +2,16 @@ import MapView from "@/components/map/map-view";
 import { getTripById } from "@/lib/atlas/get-trip";
 import { notFound } from "next/navigation";
 
+import MapView from "@/components/map/map-view";
+import { getTripById } from "@/lib/atlas/get-trip";
+import { notFound } from "next/navigation";
+
 interface ExperiencePageProps {
-  params: { tripId: string };
+  params: Promise<{ tripId: string }>;
 }
 
 export default async function ExperiencePage({ params }: ExperiencePageProps) {
-  const { tripId } = params;
+  const { tripId } = await params;
   const exp = await getTripById(tripId);
 
   if (!exp) {
@@ -34,7 +38,7 @@ export default async function ExperiencePage({ params }: ExperiencePageProps) {
         ))}
       </div>
 
-      <MapView nodes={exp.nodes} />
+      {exp.nodes.length > 0 ? <MapView nodes={exp.nodes} /> : null}
     </main>
   );
 }
