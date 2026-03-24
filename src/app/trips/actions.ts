@@ -12,6 +12,10 @@ export async function deleteTrip(tripId: string) {
   revalidatePath("/trips");
 }
 
+export { addCollaborator };
+
+export { updateStopNotes, updateStopRating };
+
 export async function toggleFavorite(tripId: string, current: boolean) {
   const supabase = createSupabaseServerClient();
 

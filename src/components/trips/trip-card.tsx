@@ -3,52 +3,78 @@
 import Link from "next/link";
 import { deleteTrip, toggleFavorite } from "@/app/trips/actions";
 
-type Trip = {
-  id: string;
-  title: string;
-  zone: string;
-  vibe: string | null;
-  created_at: string;
-  is_favorite: boolean | null;
-};
+import type { TripListItem } from "@/lib/atlas/get-trips";
 
-export default function TripCard({ trip }: { trip: Trip }) {
+interface TripCardProps {
+  trip: TripListItem;
+  premium?: boolean;
+}
+
+export default function TripCard({ trip, premium = false }: TripCardProps) {
   return (
-    <div className="rounded-2xl border p-4 shadow-sm hover:shadow-md transition">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{trip.title}</h2>
+    <article
+      className={`overflow-hidden rounded-[2rem] border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
+        premium ? "min-h-[320px]" : ""
+      }`}
+    >
+      <div
+        className={`relative p-5 ${premium ? "min-h-[220px]" : ""}`}
+        style={{
+          background:
+            premium
+              ? "linear-gradient(135deg, rgba(253,230,138,.65), rgba(191,219,254,.65), rgba(216,180,254,.65))"
+              : "linear-gradient(135deg, rgba(245,245,245,1), rgba(255,255,255,1))",
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
+              {trip.zone}
+            </p>
+            <h3 className={`mt-2 font-semibold tracking-tight ${premium ? "text-3xl" : "text-xl"}`}>
+              {trip.title}
+            </h3>
+          </div>
 
-        <button
-          onClick={() => toggleFavorite(trip.id, !!trip.is_favorite)}
-          className="text-xl"
-        >
-          {trip.is_favorite ? "⭐" : "☆"}
-        </button>
+          <button
+            type="button"
+            onClick={() => toggleFavorite(trip.id, !!trip.is_favorite)}
+            className="rounded-full border bg-white/80 px-3 py-1 text-lg"
+            aria-label="Toggle favorite"
+          >
+            {trip.is_favorite ? "⭐" : "☆"}
+          </button>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <span className="rounded-full bg-white/85 px-3 py-1 text-xs capitalize">
+            {trip.vibe ?? "fun"}
+          </span>
+          <span className="rounded-full bg-white/85 px-3 py-1 text-xs capitalize">
+            {trip.status ?? "published"}
+          </span>
+          <span className="rounded-full bg-white/85 px-3 py-1 text-xs">
+            {new Date(trip.created_at).toLocaleString()}
+          </span>
+        </div>
       </div>
 
-      <p className="text-sm opacity-70">
-        {trip.zone} • {trip.vibe ?? "fun"}
-      </p>
-
-      <p className="text-xs opacity-50">
-        {new Date(trip.created_at).toLocaleString()}
-      </p>
-
-      <div className="mt-3 flex gap-2">
+      <div className="flex flex-wrap gap-2 p-5">
         <Link
           href={`/experience/${trip.id}`}
-          className="rounded-xl border px-3 py-1 text-sm hover:bg-gray-100"
+          className="rounded-full border px-4 py-2 text-sm hover:bg-neutral-50"
         >
           Open
         </Link>
 
         <button
+          type="button"
           onClick={() => deleteTrip(trip.id)}
-          className="rounded-xl border px-3 py-1 text-sm text-red-500 hover:bg-red-50"
+          className="rounded-full border px-4 py-2 text-sm text-red-600 hover:bg-red-50"
         >
           Delete
         </button>
       </div>
-    </div>
+    </article>
   );
 }
