@@ -12,7 +12,7 @@ export async function deleteTrip(tripId: string) {
   revalidatePath("/trips");
 }
 
-export { addCollaborator };
+
 
 export { updateStopNotes, updateStopRating };
 
