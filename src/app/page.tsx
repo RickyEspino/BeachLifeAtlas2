@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 const vibes = ["fun", "chill", "romantic", "family", "foodie", "nightlife"];
 
 export default function HomePage() {
