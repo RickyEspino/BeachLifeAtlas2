@@ -244,7 +244,15 @@ export async function POST(req: Request) {
           model: "gpt-5",
           input: buildAtlasPrompt(input || "", vibeValue, rankedPlaces),
         });
-        text = response.output_text || response.output?.[0]?.content?.[0]?.text || "{}";
+        // Defensive: check if output[0] has a content property and it's an array with a text property
+        let outputText = response.output_text;
+        if (!outputText && Array.isArray(response.output) && response.output.length > 0) {
+          const first = response.output[0];
+          if (first && typeof first === "object" && "content" in first && Array.isArray(first.content) && first.content.length > 0 && typeof first.content[0] === "object" && "text" in first.content[0]) {
+            outputText = first.content[0].text;
+          }
+        }
+        text = outputText || "{}";
       } else {
         // Fallback to chat.completions.create
         const response = await openai.chat.completions.create({
