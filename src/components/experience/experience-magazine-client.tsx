@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import MapView from "@/components/map/map-view";
+import dynamic from "next/dynamic";
+
+const MapView = dynamic(() => import("@/components/map/map-view"), {
+  ssr: false,
+});
 import {
   ArrowRight,
   Clock3,
@@ -618,6 +622,17 @@ export default function ExperienceMagazineClient({ trip }: { trip: TripData }) {
                 points_reward: node.points_reward ?? 0,
                 sort_order: node.sort_order ?? 0,
               }))}
+              userLocation={
+                typeof (localTrip as { user_lat?: number | null }).user_lat === "number" &&
+                typeof (localTrip as { user_lng?: number | null }).user_lng === "number"
+                  ? {
+                      lat: (localTrip as { user_lat: number }).user_lat,
+                      lng: (localTrip as { user_lng: number }).user_lng,
+                    }
+                  : null
+              }
+              selectedStopId={selectedStopId}
+              heightClassName="h-[560px]"
             />
           </div>
         ) : null}

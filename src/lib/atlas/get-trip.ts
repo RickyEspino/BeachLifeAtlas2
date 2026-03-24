@@ -5,7 +5,7 @@ export async function getTripWithNodes(tripId: string) {
 
   const { data: trip, error: tripError } = await supabase
     .from("trips")
-    .select("id, title, zone, vibe, distance, created_at, is_favorite, status, share_slug, cover_image")
+    .select("id, title, zone, vibe, distance, created_at, is_favorite, status, share_slug, cover_image, user_lat, user_lng")
     .eq("id", tripId)
     .single();
 
