@@ -1,5 +1,5 @@
 import MapView from "@/components/map/map-view";
-import { getTripById } from "@/lib/atlas/get-trip";
+import { getTripWithNodes } from "@/lib/atlas/get-trip";
 import { notFound } from "next/navigation";
 
 interface ExperiencePageProps {
@@ -8,7 +8,7 @@ interface ExperiencePageProps {
 
 export default async function ExperiencePage({ params }: ExperiencePageProps) {
   const { tripId } = await params;
-  const exp = await getTripById(tripId);
+  const exp = await getTripWithNodes(tripId);
 
   if (!exp) {
     notFound();
