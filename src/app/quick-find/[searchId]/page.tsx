@@ -1,3 +1,4 @@
+"use client";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { getQuickSearchById } from "@/lib/atlas/get-quick-search";
