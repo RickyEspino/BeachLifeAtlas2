@@ -43,7 +43,7 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <h1 className="text-4xl font-bold">Atlas 🌊</h1>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {vibes.map((item) => (
           <button
             key={item}
@@ -56,6 +56,12 @@ export default function HomePage() {
             {item}
           </button>
         ))}
+        <a
+          href="/trips"
+          className="rounded-xl border px-4 py-2 ml-auto hover:bg-gray-100"
+        >
+          My Trips
+        </a>
       </div>
 
       <textarea
