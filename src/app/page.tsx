@@ -1,60 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAtlasStore, AtlasState } from "@/lib/store/useAtlasStore";
+const vibes = ["fun", "chill", "romantic", "family", "foodie", "nightlife"];
 
 export default function HomePage() {
   const [input, setInput] = useState("");
   const [vibe, setVibe] = useState("fun");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async () => {
-    const res = await fetch("/api/atlas", {
-      method: "POST",
-      body: JSON.stringify({ input }),
-    });
+    try {
+      setIsLoading(true);
+      setError("");
 
-    const data = await res.json();
-    const encoded = encodeURIComponent(JSON.stringify(data));
-    router.push(`/experience?data=${encoded}`);
+      const res = await fetch("/api/atlas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input, vibe }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to build experience");
+      }
+
+      router.push(`/experience/${data.tripId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <main className="p-6 flex flex-col gap-4">
-      <h1 className="text-3xl font-bold">Atlas 🌊</h1>
+    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
+      <h1 className="text-4xl font-bold">Atlas 🌊</h1>
 
-      <input
-        className="border p-3 rounded-lg"
-        placeholder="What do you feel like doing?"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-
-      <button
-        onClick={handleSubmit}
-        className="bg-blue-500 text-white p-3 rounded-lg"
-      >
-        Build My Experience
-      </button>
       <div className="flex flex-wrap gap-2">
-        {["fun", "chill", "romantic", "family", "foodie", "nightlife"].map((item) => (
+        {vibes.map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setVibe(item)}
-            className={`rounded-full border px-4 py-2 ${vibe === item ? "font-semibold" : ""}`}
+            className={`rounded-full border px-4 py-2 ${
+              vibe === item ? "font-semibold" : ""
+            }`}
           >
             {item}
           </button>
         ))}
       </div>
+
       <textarea
         className="min-h-[120px] rounded-xl border p-4"
         placeholder="What are you in the mood for?"
         value={input}
         onChange={(e) => setInput(e.target.value)}
       />
+
+      <button
+        onClick={handleSubmit}
+        disabled={isLoading}
+        className="rounded-xl border px-4 py-3 font-semibold disabled:opacity-50"
+      >
+        {isLoading ? "Building..." : "Build My Experience"}
+      </button>
+
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </main>
   );
 }
