@@ -32,7 +32,12 @@ export default function ExperiencePageInner() {
         ))}
       </div>
 
-      <MapView nodes={exp.nodes} />
+      <MapView
+        nodes={exp.nodes.map((node, index) => ({
+          ...node,
+          id: node.id ?? node.place_id ?? `stop-${index}`,
+        }))}
+      />
     </main>
   );
 }
