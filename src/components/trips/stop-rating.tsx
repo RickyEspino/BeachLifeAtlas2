@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { updateStopNotes, updateStopRating } from "@/app/trips/actions";
+
+// TODO: Implement updateStopNotes and updateStopRating actions
+function updateStopNotes(tripNodeId: string, notes: string) {
+  alert(`Save notes for node ${tripNodeId}: ${notes}`);
+}
+function updateStopRating(tripNodeId: string, rating: number) {
+  alert(`Rate stop ${tripNodeId} with ${rating} stars`);
+}
 
 export default function StopRating({
   tripNodeId,
