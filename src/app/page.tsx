@@ -123,7 +123,7 @@ export default function HomePage() {
     }, 700);
 
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [isLoading, loadingMessages.length]);
 
   const handleSubmit = async () => {
     try {
