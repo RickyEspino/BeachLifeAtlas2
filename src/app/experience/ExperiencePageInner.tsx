@@ -1,7 +1,7 @@
 "use client";
+
 import { useSearchParams } from "next/navigation";
 import MapView from "@/components/map/map-view";
-
 import type { AtlasExperience } from "@/types/atlas";
 
 export default function ExperiencePageInner() {
@@ -12,6 +12,11 @@ export default function ExperiencePageInner() {
 
   const exp: AtlasExperience = JSON.parse(decodeURIComponent(data));
 
+  const normalizedNodes = exp.nodes.map((node, index) => ({
+    ...node,
+    id: node.id ?? node.place_id ?? `stop-${index}`,
+  }));
+
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
       <div>
@@ -20,7 +25,7 @@ export default function ExperiencePageInner() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        {exp.nodes.map((node) => (
+        {normalizedNodes.map((node) => (
           <div key={node.id} className="rounded-2xl border p-4">
             <div className="mb-2 flex items-center justify-between">
               <strong>{node.role}</strong>
@@ -32,12 +37,7 @@ export default function ExperiencePageInner() {
         ))}
       </div>
 
-      <MapView
-        nodes={exp.nodes.map((node, index) => ({
-          ...node,
-          id: node.id ?? node.place_id ?? `stop-${index}`,
-        }))}
-      />
+      <MapView nodes={normalizedNodes} />
     </main>
   );
 }
